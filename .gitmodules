@@ -1,3 +1,4 @@
 [submodule "sleeper_legacy"]
 	path = sleeper_legacy
 	url = https://github.com/gterreran/sleeper_legacy
+	branch = master
