@@ -6,8 +6,8 @@
 FROM python:3.10.15-alpine3.20 as builder
 
 # set work directory
-RUN mkdir /fantasy
-WORKDIR /fantasy
+COPY sleeper_legacy /sleeper_legacy
+WORKDIR /sleeper_legacy
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -17,15 +17,12 @@ ENV PYTHONUNBUFFERED 1
 RUN apk update && apk add gcc
 RUN apk add --update make automake gcc g++ subversion python3-dev musl-dev
 
-# lint
 RUN pip install --upgrade pip
 RUN pip install flake8==6.0.0
-COPY . /fantasy/
 RUN flake8 --ignore=E501,F401 .
 
 # install python dependencies
-COPY ./requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /fantasy/wheels -r requirements.txt
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /sleeper_legacy/wheels -r requirements.txt
 
 
 
@@ -51,13 +48,16 @@ WORKDIR $APP_HOME
 
 # install dependencies
 RUN apk update && apk add netcat-openbsd
-COPY --from=builder /fantasy/wheels /wheels
-COPY --from=builder /fantasy/requirements.txt .
+COPY --from=builder /sleeper_legacy/wheels /wheels
+COPY --from=builder /sleeper_legacy/requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --no-cache /wheels/*
 
 # copy project
-COPY . $APP_HOME
+COPY sleeper_legacy $APP_HOME
+RUN ls $APP_HOME
+RUN rm $APP_HOME/Dockerfile $APP_HOME/docker-compose.yml $APP_HOME/entrypoint.sh
+COPY ./entrypoint.prod.sh $APP_HOME/.
 
 # copy entrypoint.prod.sh
 RUN sed -i 's/\r$//g'  $APP_HOME/entrypoint.prod.sh

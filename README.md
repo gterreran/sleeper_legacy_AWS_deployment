@@ -13,5 +13,28 @@ The webapp will be hosted in an AWS EC2 instance. You can notice that the `docke
 
 The guide also suggests to store the Docker images in [AWS ECR](https://aws.amazon.com/ecr/). I don't think this is strictly necessary, since to avoid architecture issues, I build the Docker containers in the EC2 instance directly. However, ECR could be a good resource to backup out images.
 
-To deploy the app, `ssh` to your EC2 instance and start by cloning this repo.
+To deploy the app, `ssh` to your EC2 instance and start by cloning this repo. Then you will need to initialize the sleeper-legacy submodule and, finally proceed to build and run the docker container.
 
+```
+git clone https://github.com/gterreran/sleeper_legacy_AWS_deployment.git
+cd sleeper_legacy_AWS_deployment
+git submodule init
+git submodule update
+docker-compose -f docker-compose.prod.yml build
+```
+
+Once the container is built, we can spin it up, run the migrations and load the static files.
+
+```
+docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml exec sleeper-legacy-web python manage.py migrate
+docker-compose -f docker-compose.prod.yml exec sleeper-legacy-web python manage.py makemigrations
+docker-compose -f docker-compose.prod.yml exec sleeper-legacy-web python manage.py migrate
+docker-compose -f docker-compose.prod.yml exec sleeper-legacy-web python manage.py collectstatic
+```
+
+If everything ran smoothly, the webapp should now be running and accessible through your domain. You can access the log at all times with
+
+```
+docker-compose -f docker-compose.prod.yml logs -f
+```
